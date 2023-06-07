@@ -23,6 +23,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     
     match &cli.command {
         Commands::Run => monitor_mode(cfg).await?,
+        Commands::GenerateKeys => generate_keys(cfg)?,
         Commands::SecretKey { secret_key } => {
             cfg.secret_key = String::from(secret_key);
             confy::store("nostrnotify", None, cfg)?
@@ -41,6 +42,18 @@ async fn main() -> Result<(), Box<dyn Error>> {
         },
     }
 
+    Ok(())
+}
+
+fn generate_keys(mut cfg: Config) -> Result<(), Box<dyn Error>> {
+    let keys = Keys::generate();
+    
+    let public_key = keys.public_key().to_bech32().unwrap();
+    let secret_key = keys.secret_key().unwrap().to_bech32().unwrap();
+    println!("Keys Generated.\nPublic Key: {public_key}\nPrivate Key: {secret_key}");
+    
+    cfg.secret_key = secret_key;
+    confy::store("nostrnotify", None, cfg)?;
     Ok(())
 }
 
