@@ -1,3 +1,6 @@
+use std::time::SystemTime;
+use time::OffsetDateTime;
+use nostr_sdk::EventId;
 use clap::{Parser, Subcommand};
 
 #[derive(Parser, Debug)]
@@ -15,4 +18,14 @@ pub enum Commands {
     FeedURL { feed_url: String },
     Interval { interval: u64 },
     AddRelay { relay: String },
+}
+
+pub fn print_check_log(feed_url: &String) {
+    let check_timestamp: OffsetDateTime = SystemTime::now().into();
+    println!("Requested {feed_url} at {check_timestamp}");
+}
+
+pub fn print_update_log(event_id: EventId) {
+    let notifcation_timestamp: OffsetDateTime = SystemTime::now().into();
+    println!("Broadcasted new episode notifcation at {notifcation_timestamp} with {event_id}")
 }

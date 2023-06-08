@@ -14,3 +14,4 @@ serde = { version = "1.0.163", features = ["derive"] }
 confy = "0.5.1"
 clap = { version = "4.3.1", features = ["derive"] }
 time = "0.3.21"
+dialoguer = "0.10.4"

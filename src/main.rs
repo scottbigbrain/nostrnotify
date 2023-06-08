@@ -1,15 +1,15 @@
 use std::{
     self,
     error::Error,
-    time::{ Duration, SystemTime },
+    time::Duration,
 };
-use time::OffsetDateTime;
 use nostr_sdk::prelude::*;
 use rss::Channel;
 use reqwest;
 use tokio;
 use confy;
 use clap::Parser;
+use dialoguer::Confirm;
 use crate::config::*;
 use crate::cli::*;
 
@@ -47,13 +47,23 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
 fn generate_keys(mut cfg: Config) -> Result<(), Box<dyn Error>> {
     let keys = Keys::generate();
-    
     let public_key = keys.public_key().to_bech32().unwrap();
     let secret_key = keys.secret_key().unwrap().to_bech32().unwrap();
-    println!("Keys Generated.\nPublic Key: {public_key}\nPrivate Key: {secret_key}");
+    println!("Keys Generated\nPublic Key: {public_key}\nPrivate Key: {secret_key}");
     
-    cfg.secret_key = secret_key;
-    confy::store("nostrnotify", None, cfg)?;
+    let store_keys = Confirm::new()
+        .with_prompt("Do you want to store the new keys to config? This will overwrite the currently stored key.")
+        .wait_for_newline(true)
+        .interact()?;
+    
+    if store_keys {
+        cfg.secret_key = secret_key;
+        confy::store("nostrnotify", None, cfg)?;
+        println!("Keys stored to {}", confy::get_configuration_file_path("nostrnotify", None).unwrap().to_str().unwrap());
+    } else {
+        println!("Gotcha. Keys not stored");
+    }
+    
     Ok(())
 }
 
@@ -81,16 +91,6 @@ async fn monitor_mode(cfg: Config) -> Result<(), Box<dyn Error>> {
             print_update_log(event_id);
         }
     }
-}
-
-fn print_check_log(feed_url: &String) {
-    let check_timestamp: OffsetDateTime = SystemTime::now().into();
-    println!("Requested {feed_url} at {check_timestamp}");
-}
-
-fn print_update_log(event_id: EventId) {
-    let notifcation_timestamp: OffsetDateTime = SystemTime::now().into();
-    println!("Broadcasted new episode notifcation at {notifcation_timestamp} with {event_id}")
 }
 
 async fn publish_notification(feed: &Channel, client: &Client) -> Result<EventId, Box<dyn Error>> {
