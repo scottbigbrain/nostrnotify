@@ -97,7 +97,8 @@ async fn publish_notification(feed: &Channel, client: &Client) -> Result<EventId
     let event_text = format!(
         "New {pod_title} episode out now!\n\"{ep_title}\"", 
         pod_title = feed.title,
-        ep_title = feed.items[0].title().unwrap(),);
+        ep_title = feed.items[0].title().unwrap(),
+        );
     let event_id = client.publish_text_note(event_text, &[]).await?;
     Ok(event_id)
 }
