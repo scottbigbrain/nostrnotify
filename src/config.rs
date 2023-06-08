@@ -6,6 +6,9 @@ pub struct Config {
     pub relays: Vec<String>,
     pub feed_url: String,
     pub check_interval_seconds: u64,
+    pub name: String,
+    pub display_name: String,
+    pub description: String,
 }
 
 impl Default for Config {
@@ -14,7 +17,10 @@ impl Default for Config {
             secret_key: "".into(), 
             relays: vec!["wss://nos.lol".into(), "wss://relay.house".into()],
             feed_url: "".into(),
-            check_interval_seconds: 300, 
+            check_interval_seconds: 300,
+            name: "".into(),
+            display_name: "".into(),
+            description: "".into(),
         }
     }
 }

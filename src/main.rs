@@ -9,7 +9,7 @@ use reqwest;
 use tokio;
 use confy;
 use clap::Parser;
-use dialoguer::Confirm;
+use dialoguer::{ Confirm, Input, Editor };
 use crate::config::*;
 use crate::cli::*;
 
@@ -24,6 +24,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     match &cli.command {
         Commands::Run => monitor_mode(cfg).await?,
         Commands::GenerateKeys => generate_keys(cfg)?,
+        Commands::SetMetadata => request_user_metadata(cfg)?,
         Commands::SecretKey { secret_key } => {
             cfg.secret_key = String::from(secret_key);
             confy::store("nostrnotify", None, cfg)?
@@ -63,6 +64,49 @@ fn generate_keys(mut cfg: Config) -> Result<(), Box<dyn Error>> {
     } else {
         println!("Gotcha. Keys not stored");
     }
+    
+    Ok(())
+}
+
+fn request_user_metadata(mut cfg: Config) -> Result<(), Box<dyn Error>> {
+    let username: String = Input::new()
+        .with_prompt("Enter bot username")
+        .interact_text()?;
+    cfg.name = username;
+    let display_name: String = Input::new()
+        .with_prompt("Enter bot display name")
+        .interact_text()?;
+    cfg.display_name = display_name;
+        
+    let include_description = Confirm::new()
+        .with_prompt("Do you want to include a description?")
+        .interact()?;
+    
+    let description = if include_description {
+        Editor::new().edit("Enter bot description").unwrap().unwrap()
+    } else {
+        String::new()
+    };
+    cfg.description = description;
+    
+    confy::store("nostrnotify", None, cfg)?;
+    Ok(())
+}
+
+async fn publish_metadata(cfg: Config) -> Result<(), Box<dyn Error>> {
+    let my_keys = Keys::from_sk_str(&cfg.secret_key).unwrap();
+    let client = Client::new(&my_keys);
+    
+    for relay in cfg.relays {
+        client.add_relay(&relay, None).await?;
+    }
+    client.connect().await;
+    
+    let metadata = Metadata::new()
+        .name(&cfg.name)
+        .display_name(&cfg.display_name)
+        .about(&cfg.description);
+    client.set_metadata(metadata).await?;
     
     Ok(())
 }

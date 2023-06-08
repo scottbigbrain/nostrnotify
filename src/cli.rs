@@ -14,6 +14,7 @@ pub struct Cli {
 pub enum Commands {
     Run,
     GenerateKeys,
+    SetMetadata,
     SecretKey { secret_key: String },
     FeedURL { feed_url: String },
     Interval { interval: u64 },
