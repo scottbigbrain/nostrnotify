@@ -12,9 +12,11 @@ use clap::Parser;
 use dialoguer::{ Confirm, Input, Editor };
 use crate::config::*;
 use crate::cli::*;
+use crate::notification::*;
 
 pub mod config;
 pub mod cli;
+pub mod notification;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
@@ -54,7 +56,6 @@ fn generate_keys(mut cfg: Config) -> Result<(), Box<dyn Error>> {
     
     let store_keys = Confirm::new()
         .with_prompt("Do you want to store the new keys to config? This will overwrite the currently stored key.")
-        .wait_for_newline(true)
         .interact()?;
     
     if store_keys {
@@ -93,7 +94,7 @@ fn request_user_metadata(mut cfg: Config) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-async fn publish_metadata(cfg: Config) -> Result<(), Box<dyn Error>> {
+async fn monitor_mode(cfg: Config) -> Result<(), Box<dyn Error>> {
     let my_keys = Keys::from_sk_str(&cfg.secret_key).unwrap();
     let client = Client::new(&my_keys);
     
@@ -108,18 +109,6 @@ async fn publish_metadata(cfg: Config) -> Result<(), Box<dyn Error>> {
         .about(&cfg.description);
     client.set_metadata(metadata).await?;
     
-    Ok(())
-}
-
-async fn monitor_mode(cfg: Config) -> Result<(), Box<dyn Error>> {
-    let my_keys = Keys::from_sk_str(&cfg.secret_key).unwrap();
-    let client = Client::new(&my_keys);
-    
-    for relay in cfg.relays {
-        client.add_relay(&relay, None).await?;
-    }
-    client.connect().await;
-    
     let feed = get_feed(&cfg.feed_url).await?;
     let mut last_feed_len = feed.items.len();
     
@@ -132,17 +121,14 @@ async fn monitor_mode(cfg: Config) -> Result<(), Box<dyn Error>> {
         if feed.items.len() > last_feed_len {
             last_feed_len = feed.items.len();
             let event_id = publish_notification(&feed, &client).await?;
-            print_update_log(event_id);
+            print_notify_log(event_id);
         }
     }
 }
 
 async fn publish_notification(feed: &Channel, client: &Client) -> Result<EventId, Box<dyn Error>> {
-    let event_text = format!(
-        "New {pod_title} episode out now!\n\"{ep_title}\"", 
-        pod_title = feed.title,
-        ep_title = feed.items[0].title().unwrap(),
-        );
+    let episode = Episode { podcast_name: feed.title.clone(), title: feed.items[0].title().unwrap().to_string().clone() };
+    let event_text = episode.to_notification();
     let event_id = client.publish_text_note(event_text, &[]).await?;
     Ok(event_id)
 }
