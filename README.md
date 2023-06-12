@@ -1,5 +1,6 @@
 # nostrnotify
 `nostrnotify` is a tool for automatically posting updates on podcast rss feeds to nostr. It can post notifications of new episodes, live streams, and possibly more to come! :)
+
 **NOTE: This project is still in alpha and should not be used unless you are helping to develop it**
 
 # Installation
@@ -55,3 +56,18 @@ To start monitoring the feed, just run
 ~$ nostrnotify run
 ```
 Currently, this will just run in the terminal and log updates to the console. If you don't want it flooding the terminal then run it as a backgroun process.
+
+# Contributing
+I am currently working on this alone, but I am very open to anyone joining me in the development. There is not yet a specific means of contributing, but feel free to open up issues and PRs and we can talk on there.
+
+There is a list of features that you can work on developing if you want.
+
+There is a test bot I have been pushing test notifications to that you can look at if you want. 
+npub1mp2dt4gnfvull2l8wnc92dzmxkq9rkq982qhq47s6jtv9l6l9d3scfp9uk
+
+# TODO
+-[ ] Include links in notifications
+-[ ] Allow for one instance pushing notifications for multiple feeds
+-[ ] Write tests :/
+-[ ] Fix time formatting on live stream notifications
+-[ ] Make notifications easier to read
