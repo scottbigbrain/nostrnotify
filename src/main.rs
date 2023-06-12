@@ -77,7 +77,6 @@ async fn monitor_mode(cfg: Config) -> Result<(), Box<dyn Error>> {
         
         if new_feed != old_feed {
             let new_content = handle_update(&new_feed, &old_feed);
-            dbg!(&new_content);
             handle_new_content(new_content, new_feed.title.clone(), &client).await?;
             old_feed = new_feed;
         }
@@ -111,8 +110,8 @@ fn find_inconsistent_live_items(new_feed: &StrippedChannel, old_feed: &StrippedC
 async fn handle_new_content(new_content: Option<NewContent>, podcast_title: String, client: &Client) -> Result<(), Box<dyn Error>> {
     match new_content {
         Some(new_content) => {
-            let event_id = publish_notification(new_content, podcast_title, client).await?;
-            print_notify_log(event_id);
+            let event_id = publish_notification(new_content.clone(), podcast_title, client).await?;
+            print_notify_log(new_content.clone(), event_id);
         },
         None => (),
     }
@@ -131,14 +130,6 @@ async fn publish_notification(new_content: NewContent, podcast_title: String, cl
     }
     Ok(client.publish_text_note(event_text, &[]).await?)
 }
-
-// async fn publish_notification(feed: &Channel, client: &Client) -> Result<EventId, Box<dyn Error>> {
-//     // let episode = Episode { title: feed.items[0].title().unwrap().to_string().clone() };
-//     let episode = Episode::from_item(&feed.items[0]);
-//     let event_text = episode.to_notification(feed.title.clone());
-//     let event_id = client.publish_text_note(event_text, &[]).await?;
-//     Ok(event_id)
-// }
 
 async fn get_feed(url: &str) -> Result<Channel, Box<dyn Error>> {
     let content = reqwest::get(url)

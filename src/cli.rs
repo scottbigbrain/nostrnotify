@@ -6,6 +6,7 @@ use dialoguer::{ Confirm, Input, Editor };
 use confy;
 use nostr_sdk::prelude::*;
 use crate::config::Config;
+use crate::notification::NewContent;
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
@@ -30,9 +31,13 @@ pub fn print_check_log(feed_url: &String) {
     println!("Requested {feed_url} at {check_timestamp}");
 }
 
-pub fn print_notify_log(event_id: EventId) {
+pub fn print_notify_log(new_content: NewContent, event_id: EventId) {
     let notifcation_timestamp: OffsetDateTime = SystemTime::now().into();
-    println!("Broadcasted new episode notifcation at {notifcation_timestamp} with {event_id}")
+    let notification_type = match new_content {
+        NewContent::NewEpisode(..) => "new episode",
+        NewContent::NewLiveItem(..) => "live item",
+    };
+    println!("Broadcasted {notification_type} notifcation at {notifcation_timestamp} with {event_id}")
 }
 
 pub fn generate_keys(mut cfg: Config) -> Result<(), Box<dyn Error>> {
