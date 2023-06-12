@@ -73,11 +73,9 @@ async fn monitor_mode(cfg: Config) -> Result<(), Box<dyn Error>> {
         
         let verbose_feed = get_feed(&cfg.feed_url).await?;
         let new_feed = StrippedChannel::from_channel(&verbose_feed);
-        dbg!(&new_feed);
         print_check_log(&cfg.feed_url);
         
         if new_feed != old_feed {
-            println!("It changed!");
             let new_content = handle_update(&new_feed, &old_feed);
             dbg!(&new_content);
             handle_new_content(new_content, new_feed.title.clone(), &client).await?;
@@ -90,8 +88,22 @@ fn handle_update(new_feed: &StrippedChannel, old_feed: &StrippedChannel) -> Opti
     if new_feed.episodes.len() > old_feed.episodes.len() {
         return Some(NewContent::NewEpisode(new_feed.episodes[0].clone()));
     }
+    
     if new_feed.live_items != old_feed.live_items {
-        return Some(NewContent::NewLiveItem(new_feed.live_items[0].clone()));
+        if new_feed.live_items.len() > old_feed.live_items.len() {
+            return Some(NewContent::NewLiveItem(new_feed.live_items[0].clone()));
+        }
+        return find_inconsistent_live_items(new_feed, old_feed);
+    }
+    
+    None
+}
+
+fn find_inconsistent_live_items(new_feed: &StrippedChannel, old_feed: &StrippedChannel) -> Option<NewContent> {
+    for i in 0..new_feed.live_items.len() {
+        if new_feed.live_items[i].status != old_feed.live_items[i].status {
+            return Some(NewContent::NewLiveItem(new_feed.live_items[i].clone()));
+        }
     }
     None
 }
@@ -100,14 +112,14 @@ async fn handle_new_content(new_content: Option<NewContent>, podcast_title: Stri
     match new_content {
         Some(new_content) => {
             let event_id = publish_notification(new_content, podcast_title, client).await?;
-            // print_notify_log(event_id);
+            print_notify_log(event_id);
         },
         None => (),
     }
     Ok(())
 }
 
-async fn publish_notification(new_content: NewContent, podcast_title: String, client: &Client) -> Result<(), Box<dyn Error>> {
+async fn publish_notification(new_content: NewContent, podcast_title: String, client: &Client) -> Result<EventId, Box<dyn Error>> {
     let event_text;
     match new_content {
         NewContent::NewEpisode(episode) => {
@@ -117,9 +129,7 @@ async fn publish_notification(new_content: NewContent, podcast_title: String, cl
             event_text = live_item.to_notification(String::from(podcast_title));
         }
     }
-    println!("{:?}", event_text);
-    // Ok(client.publish_text_note(event_text, &[]).await?)
-    Ok(())
+    Ok(client.publish_text_note(event_text, &[]).await?)
 }
 
 // async fn publish_notification(feed: &Channel, client: &Client) -> Result<EventId, Box<dyn Error>> {
