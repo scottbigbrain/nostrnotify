@@ -29,6 +29,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         Commands::SetMetadata => request_user_metadata(cfg)?,
         Commands::SecretKey { secret_key } => {
             cfg.secret_key = String::from(secret_key);
+            cfg.public_key = Keys::from_sk_str(secret_key).unwrap().public_key().to_bech32().unwrap();
             confy::store("nostrnotify", None, cfg)?
         },
         Commands::FeedURL { feed_url } => {
@@ -60,6 +61,7 @@ fn generate_keys(mut cfg: Config) -> Result<(), Box<dyn Error>> {
     
     if store_keys {
         cfg.secret_key = secret_key;
+        cfg.public_key = public_key;
         confy::store("nostrnotify", None, cfg)?;
         println!("Keys stored to {}", confy::get_configuration_file_path("nostrnotify", None).unwrap().to_str().unwrap());
     } else {
