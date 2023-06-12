@@ -127,8 +127,8 @@ async fn monitor_mode(cfg: Config) -> Result<(), Box<dyn Error>> {
 }
 
 async fn publish_notification(feed: &Channel, client: &Client) -> Result<EventId, Box<dyn Error>> {
-    let episode = Episode { podcast_name: feed.title.clone(), title: feed.items[0].title().unwrap().to_string().clone() };
-    let event_text = episode.to_notification();
+    let episode = Episode { title: feed.items[0].title().unwrap().to_string().clone() };
+    let event_text = episode.to_notification(feed.title.clone());
     let event_id = client.publish_text_note(event_text, &[]).await?;
     Ok(event_id)
 }

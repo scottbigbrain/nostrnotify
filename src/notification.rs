@@ -1,24 +1,42 @@
-pub struct Notification(String);
+use rss::{ Item, Channel };
+
+pub struct StrippedChannel {
+    pub title: String,
+    pub episodes: Vec<Episode>,
+    pub live_items: Vec<LiveItem>,
+}
+
+impl StrippedChannel {
+    fn from_channel(channel: Channel) -> StrippedChannel {
+        let episodes: Vec<Episode> = channel.items().iter().map(|x| Episode::from_item(x)).collect();
+        
+        StrippedChannel { title: String::from(channel.title()), episodes: episodes, live_items: vec![] }
+    }
+}
 
 pub trait ToNotification {
-    fn to_notification(&self) -> String;
+    fn to_notification(&self, podcast_name: String) -> String;
 }
 
 pub struct Episode {
     pub title: String,
-    pub podcast_name: String,
+}
+
+impl Episode {
+    fn from_item(item: &Item) -> Episode {
+        Episode { title: String::from(item.title().unwrap()) }
+    }
 }
 
 impl ToNotification for Episode {
-    fn to_notification(&self) -> String {
-       format!("New episode: {} uploaded {}", self.podcast_name, self.title)
+    fn to_notification(&self, podcast_name: String) -> String {
+       format!("New episode: {} uploaded {}", podcast_name, self.title)
     }
 }
 
 pub struct LiveItem {
     pub status: LiveItemStatus,
     pub start_time: String,
-    pub podcast_name: String,
 }
 
 #[derive(Clone, Copy)]
@@ -29,11 +47,11 @@ pub enum LiveItemStatus {
 }
 
 impl ToNotification for LiveItem {
-    fn to_notification(&self) -> String {
+    fn to_notification(&self, podcast_name: String) -> String {
         match self.status {
-            LiveItemStatus::Pending => pending_notification(&self.podcast_name, &self.start_time),
-            LiveItemStatus::Live => live_notification(&self.podcast_name),
-            LiveItemStatus::Ended => ended_notification(&self.podcast_name),
+            LiveItemStatus::Pending => pending_notification(&podcast_name, &self.start_time),
+            LiveItemStatus::Live => live_notification(&podcast_name),
+            LiveItemStatus::Ended => ended_notification(&podcast_name),
         }
     }
 }
