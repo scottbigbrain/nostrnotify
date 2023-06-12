@@ -1,7 +1,7 @@
 use std::time::SystemTime;
 use time::OffsetDateTime;
 use nostr_sdk::EventId;
-use clap::{Parser, Subcommand};
+use clap::{ Parser, Subcommand };
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
