@@ -1,5 +1,6 @@
 use rss::{ Item, Channel };
 
+#[derive(PartialEq, Debug)]
 pub struct StrippedChannel {
     pub title: String,
     pub episodes: Vec<Episode>,
@@ -7,7 +8,7 @@ pub struct StrippedChannel {
 }
 
 impl StrippedChannel {
-    fn from_channel(channel: Channel) -> StrippedChannel {
+    pub fn from_channel(channel: &Channel) -> StrippedChannel {
         let episodes: Vec<Episode> = channel.items().iter().map(|x| Episode::from_item(x)).collect();
         
         StrippedChannel { title: String::from(channel.title()), episodes: episodes, live_items: vec![] }
@@ -18,12 +19,13 @@ pub trait ToNotification {
     fn to_notification(&self, podcast_name: String) -> String;
 }
 
+#[derive(PartialEq, Clone, Debug)]
 pub struct Episode {
     pub title: String,
 }
 
 impl Episode {
-    fn from_item(item: &Item) -> Episode {
+    pub fn from_item(item: &Item) -> Episode {
         Episode { title: String::from(item.title().unwrap()) }
     }
 }
@@ -34,12 +36,13 @@ impl ToNotification for Episode {
     }
 }
 
+#[derive(PartialEq, Clone, Debug)]
 pub struct LiveItem {
     pub status: LiveItemStatus,
     pub start_time: String,
 }
 
-#[derive(Clone, Copy)]
+#[derive(PartialEq, Clone, Copy, Debug)]
 pub enum LiveItemStatus {
     Pending,
     Live,
@@ -66,4 +69,10 @@ fn live_notification(name: &String) -> String {
 
 fn ended_notification(name: &String) -> String {
     format!("Live stream: {name} stopped streaming")
+}
+
+#[derive(Clone)]
+pub enum NewContent {
+    NewEpisode(Episode),
+    NewLiveItem(LiveItem),
 }
