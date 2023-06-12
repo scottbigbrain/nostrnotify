@@ -63,31 +63,25 @@ async fn monitor_mode(cfg: Config) -> Result<(), Box<dyn Error>> {
         .about(&cfg.description);
     client.set_metadata(metadata).await?;
     
-    let feed = get_feed(&cfg.feed_url).await?;
-    // let mut last_feed_len = feed.items.len();
-    let mut last_stripped = StrippedChannel::from_channel(&feed);
+    let verbose_feed = get_feed(&cfg.feed_url).await?;
+    let mut old_feed = StrippedChannel::from_channel(&verbose_feed);
     
     let mut interval = tokio::time::interval(Duration::from_secs(cfg.check_interval_seconds));
     
     loop {
         interval.tick().await;
         
-        let feed = get_feed(&cfg.feed_url).await?;
-        let stripped = StrippedChannel::from_channel(&feed);
-        println!("{:?}", stripped);
+        let verbose_feed = get_feed(&cfg.feed_url).await?;
+        let new_feed = StrippedChannel::from_channel(&verbose_feed);
+        dbg!(&new_feed);
         print_check_log(&cfg.feed_url);
         
-        // if feed.items.len() > last_feed_len {
-        //     last_feed_len = feed.items.len();
-        //     let event_id = publish_notification(&feed, &client).await?;
-        //     print_notify_log(event_id);
-        // }
-        if stripped != last_stripped {
+        if new_feed != old_feed {
             println!("It changed!");
-            let new_content = handle_update(&stripped, &last_stripped);
+            let new_content = handle_update(&new_feed, &old_feed);
             dbg!(&new_content);
-            handle_new_content(new_content, &client).await?;
-            last_stripped = stripped;
+            handle_new_content(new_content, new_feed.title.clone(), &client).await?;
+            old_feed = new_feed;
         }
     }
 }
@@ -102,10 +96,10 @@ fn handle_update(new_feed: &StrippedChannel, old_feed: &StrippedChannel) -> Opti
     None
 }
 
-async fn handle_new_content(new_content: Option<NewContent>, client: &Client) -> Result<(), Box<dyn Error>> {
+async fn handle_new_content(new_content: Option<NewContent>, podcast_title: String, client: &Client) -> Result<(), Box<dyn Error>> {
     match new_content {
         Some(new_content) => {
-            let event_id = publish_notification(new_content, client).await?;
+            let event_id = publish_notification(new_content, podcast_title, client).await?;
             // print_notify_log(event_id);
         },
         None => (),
@@ -113,14 +107,14 @@ async fn handle_new_content(new_content: Option<NewContent>, client: &Client) ->
     Ok(())
 }
 
-async fn publish_notification(new_content: NewContent, client: &Client) -> Result<(), Box<dyn Error>> {
+async fn publish_notification(new_content: NewContent, podcast_title: String, client: &Client) -> Result<(), Box<dyn Error>> {
     let event_text;
     match new_content {
         NewContent::NewEpisode(episode) => {
-            event_text = episode.to_notification(String::from("stand in please fix"));
+            event_text = episode.to_notification(String::from(podcast_title));
         },
         NewContent::NewLiveItem(live_item) => {
-            event_text = live_item.to_notification(String::from("stand in please fix"));
+            event_text = live_item.to_notification(String::from(podcast_title));
         }
     }
     println!("{:?}", event_text);
