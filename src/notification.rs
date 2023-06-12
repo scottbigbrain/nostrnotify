@@ -1,4 +1,4 @@
-use rss::{ Item, Channel };
+use rss::{ Item, Channel, extension::* };
 
 #[derive(PartialEq, Debug)]
 pub struct StrippedChannel {
@@ -10,9 +10,22 @@ pub struct StrippedChannel {
 impl StrippedChannel {
     pub fn from_channel(channel: &Channel) -> StrippedChannel {
         let episodes: Vec<Episode> = channel.items().iter().map(|x| Episode::from_item(x)).collect();
+
+        let live_item_extensions = get_live_item_extensions(channel.extensions()).unwrap();
+        let live_items: Vec<LiveItem> = live_item_extensions.iter().map(|x| LiveItem::from_extension(x)).collect();
         
-        StrippedChannel { title: String::from(channel.title()), episodes: episodes, live_items: vec![] }
+        StrippedChannel { title: String::from(channel.title()), episodes: episodes, live_items: live_items }
     }
+}
+
+fn get_live_item_extensions(extension_map: &ExtensionMap) -> Option<Vec<Extension>> {
+    if !extension_map.contains_key("podcast") { return None; }
+    
+    let extensions = extension_map.get_key_value("podcast").unwrap().1;
+    if !extensions.contains_key("liveItem") { return None; }
+    
+    let live_item_extensions = extensions.get_key_value("liveItem").unwrap().1.clone();
+    Some(live_item_extensions)
 }
 
 pub trait ToNotification {
@@ -40,6 +53,18 @@ impl ToNotification for Episode {
 pub struct LiveItem {
     pub status: LiveItemStatus,
     pub start_time: String,
+}
+
+impl LiveItem {
+    fn from_extension(extension: &Extension) -> Self {
+        let status = match extension.attrs().get("status").unwrap().as_str() {
+            "pending" => LiveItemStatus::Pending,
+            "live" => LiveItemStatus::Live,
+            "ended" => LiveItemStatus::Ended,
+            _ => LiveItemStatus::Ended,
+        };
+        LiveItem { status: status, start_time: extension.attrs().get("start").unwrap().clone() }
+    }
 }
 
 #[derive(PartialEq, Clone, Copy, Debug)]

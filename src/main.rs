@@ -102,14 +102,14 @@ async fn handle_new_content(new_content: Option<NewContent>, client: &Client) ->
     match new_content {
         Some(new_content) => {
             let event_id = publish_notification(new_content, client).await?;
-            print_notify_log(event_id);
+            // print_notify_log(event_id);
         },
         None => (),
     }
     Ok(())
 }
 
-async fn publish_notification(new_content: NewContent, client: &Client) -> Result<EventId, Box<dyn Error>> {
+async fn publish_notification(new_content: NewContent, client: &Client) -> Result<(), Box<dyn Error>> {
     let event_text;
     match new_content {
         NewContent::NewEpisode(episode) => {
@@ -119,7 +119,8 @@ async fn publish_notification(new_content: NewContent, client: &Client) -> Resul
             event_text = live_item.to_notification(String::from("stand in please fix"));
         }
     }
-    Ok(client.publish_text_note(event_text, &[]).await?)
+    // Ok(client.publish_text_note(event_text, &[]).await?)
+    Ok(())
 }
 
 // async fn publish_notification(feed: &Channel, client: &Client) -> Result<EventId, Box<dyn Error>> {
