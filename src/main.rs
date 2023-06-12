@@ -85,6 +85,7 @@ async fn monitor_mode(cfg: Config) -> Result<(), Box<dyn Error>> {
         if stripped != last_stripped {
             println!("It changed!");
             let new_content = handle_update(&stripped, &last_stripped);
+            dbg!(&new_content);
             handle_new_content(new_content, &client).await?;
             last_stripped = stripped;
         }
@@ -94,6 +95,9 @@ async fn monitor_mode(cfg: Config) -> Result<(), Box<dyn Error>> {
 fn handle_update(new_feed: &StrippedChannel, old_feed: &StrippedChannel) -> Option<NewContent> {
     if new_feed.episodes.len() > old_feed.episodes.len() {
         return Some(NewContent::NewEpisode(new_feed.episodes[0].clone()));
+    }
+    if new_feed.live_items != old_feed.live_items {
+        return Some(NewContent::NewLiveItem(new_feed.live_items[0].clone()));
     }
     None
 }
@@ -119,6 +123,7 @@ async fn publish_notification(new_content: NewContent, client: &Client) -> Resul
             event_text = live_item.to_notification(String::from("stand in please fix"));
         }
     }
+    println!("{:?}", event_text);
     // Ok(client.publish_text_note(event_text, &[]).await?)
     Ok(())
 }

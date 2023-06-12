@@ -11,21 +11,20 @@ impl StrippedChannel {
     pub fn from_channel(channel: &Channel) -> StrippedChannel {
         let episodes: Vec<Episode> = channel.items().iter().map(|x| Episode::from_item(x)).collect();
 
-        let live_item_extensions = get_live_item_extensions(channel.extensions()).unwrap();
+        let live_item_extensions = get_live_item_extensions(channel.extensions());
         let live_items: Vec<LiveItem> = live_item_extensions.iter().map(|x| LiveItem::from_extension(x)).collect();
         
         StrippedChannel { title: String::from(channel.title()), episodes: episodes, live_items: live_items }
     }
 }
 
-fn get_live_item_extensions(extension_map: &ExtensionMap) -> Option<Vec<Extension>> {
-    if !extension_map.contains_key("podcast") { return None; }
+fn get_live_item_extensions(extension_map: &ExtensionMap) -> Vec<Extension> {
+    if !extension_map.contains_key("podcast") { return vec![]; }
     
     let extensions = extension_map.get_key_value("podcast").unwrap().1;
-    if !extensions.contains_key("liveItem") { return None; }
+    if !extensions.contains_key("liveItem") { return vec![]; }
     
-    let live_item_extensions = extensions.get_key_value("liveItem").unwrap().1.clone();
-    Some(live_item_extensions)
+    extensions.get_key_value("liveItem").unwrap().1.clone()
 }
 
 pub trait ToNotification {
@@ -96,7 +95,7 @@ fn ended_notification(name: &String) -> String {
     format!("Live stream: {name} stopped streaming")
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum NewContent {
     NewEpisode(Episode),
     NewLiveItem(LiveItem),
