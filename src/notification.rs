@@ -34,17 +34,22 @@ pub trait ToNotification {
 #[derive(PartialEq, Clone, Debug)]
 pub struct Episode {
     pub title: String,
+    pub link: Option<String>,
 }
 
 impl Episode {
     pub fn from_item(item: &Item) -> Episode {
-        Episode { title: String::from(item.title().unwrap()) }
+        Episode { title: String::from(item.title().unwrap()), link: item.link.clone() }
     }
 }
 
 impl ToNotification for Episode {
     fn to_notification(&self, podcast_name: String) -> String {
-       format!("New episode: {} uploaded {}", podcast_name, self.title)
+        if self.link != None {
+            format!("New episode: {} uploaded '{}'\nWatch at {}", podcast_name, self.title, self.link.as_ref().unwrap())
+        } else {
+            format!("New episode: {} uploaded '{}'", podcast_name, self.title)
+        }
     }
 }
 
@@ -52,6 +57,7 @@ impl ToNotification for Episode {
 pub struct LiveItem {
     pub status: LiveItemStatus,
     pub start_time: String,
+    pub link: String,
 }
 
 impl LiveItem {
@@ -62,7 +68,8 @@ impl LiveItem {
             "ended" => LiveItemStatus::Ended,
             _ => LiveItemStatus::Ended,
         };
-        LiveItem { status: status, start_time: extension.attrs().get("start").unwrap().clone() }
+        let link = extension.children().get("contentLink").unwrap()[0].attrs().get("href").unwrap().clone();
+        LiveItem { status: status, start_time: extension.attrs().get("start").unwrap().clone(), link: link }
     }
 }
 
@@ -76,19 +83,19 @@ pub enum LiveItemStatus {
 impl ToNotification for LiveItem {
     fn to_notification(&self, podcast_name: String) -> String {
         match self.status {
-            LiveItemStatus::Pending => pending_notification(&podcast_name, &self.start_time),
-            LiveItemStatus::Live => live_notification(&podcast_name),
+            LiveItemStatus::Pending => pending_notification(&podcast_name, &self.start_time, &self.link),
+            LiveItemStatus::Live => live_notification(&podcast_name, &self.link),
             LiveItemStatus::Ended => ended_notification(&podcast_name),
         }
     }
 }
 
-fn pending_notification(name: &String, start_time: &String) -> String {
-    format!("Live stream: {name} will be live at {start_time}")
+fn pending_notification(name: &String, start_time: &String, link: &String) -> String {
+    format!("Live stream: {name} will be live at {start_time}\nWatch at {link}")
 }
 
-fn live_notification(name: &String) -> String {
-    format!("Live stream: {name} is now live!")
+fn live_notification(name: &String, link: &String) -> String {
+    format!("Live stream: {name} is now live!\nWatch at {link}")
 }
 
 fn ended_notification(name: &String) -> String {
