@@ -65,6 +65,12 @@ There is a list of features that you can work on developing if you want.
 There is a test bot I have been pushing test notifications to that you can look at if you want. 
 npub1mp2dt4gnfvull2l8wnc92dzmxkq9rkq982qhq47s6jtv9l6l9d3scfp9uk
 
+# Donate
+If you would like to support in some financial way, rather than contributing code, there's a couple options.
+- Tip over lightning to [irrationallogic42@getalby.com](https://getalby.com/p/irrationallogic42)
+- Send BTC privately with PayNym to `+calmsmoke4C0`(not an address)
+- Send on mainchain to [bc1q2zd4kenkp3ym7mhx7mrhczxpc7dmfdhxjzfg3k](bitcoin:bc1q2zd4kenkp3ym7mhx7mrhczxpc7dmfdhxjzfg3k)
+
 # TODO
 - ~Include links in notifications~
 - Allow for one instance pushing notifications for multiple feeds
