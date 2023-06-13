@@ -66,7 +66,7 @@ There is a test bot I have been pushing test notifications to that you can look 
 npub1mp2dt4gnfvull2l8wnc92dzmxkq9rkq982qhq47s6jtv9l6l9d3scfp9uk
 
 # TODO
-- Include links in notifications
+- ~Include links in notifications~
 - Allow for one instance pushing notifications for multiple feeds
 - Write tests :/
 - Fix time formatting on live stream notifications
