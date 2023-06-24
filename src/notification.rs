@@ -2,19 +2,20 @@ use rss::{ Item, Channel, extension::* };
 
 #[derive(PartialEq, Debug)]
 pub struct StrippedChannel {
+    pub url: String,
     pub title: String,
     pub episodes: Vec<Episode>,
     pub live_items: Vec<LiveItem>,
 }
 
 impl StrippedChannel {
-    pub fn from_channel(channel: &Channel) -> StrippedChannel {
+    pub fn from_channel(channel: &Channel, feed_url: &str) -> StrippedChannel {
         let episodes: Vec<Episode> = channel.items().iter().map(|x| Episode::from_item(x)).collect();
 
         let live_item_extensions = get_live_item_extensions(channel.extensions());
         let live_items: Vec<LiveItem> = live_item_extensions.iter().map(|x| LiveItem::from_extension(x)).collect();
         
-        StrippedChannel { title: String::from(channel.title()), episodes: episodes, live_items: live_items }
+        StrippedChannel { url: String::from(feed_url), title: String::from(channel.title()), episodes: episodes, live_items: live_items }
     }
 }
 

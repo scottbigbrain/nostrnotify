@@ -31,8 +31,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
             cfg.public_key = Keys::from_sk_str(secret_key).unwrap().public_key().to_bech32().unwrap();
             confy::store("nostrnotify", None, cfg)?
         },
-        Commands::FeedURL { feed_url } => {
-            cfg.feed_url = String::from(feed_url);
+        Commands::AddFeed { feed_url } => {
+            cfg.feeds.push(String::from(feed_url));
             confy::store("nostrnotify", None, cfg)?
         },
         Commands::Interval { interval } => {
@@ -63,24 +63,36 @@ async fn monitor_mode(cfg: Config) -> Result<(), Box<dyn Error>> {
         .about(&cfg.description);
     client.set_metadata(metadata).await?;
     
-    let verbose_feed = get_feed(&cfg.feed_url).await?;
-    let mut old_feed = StrippedChannel::from_channel(&verbose_feed);
+    let mut old_feeds: Vec<StrippedChannel> = vec![];
+    for feed_url in cfg.feeds.iter() {
+        let verbose_feed = get_feed(&feed_url).await?;
+        old_feeds.push(StrippedChannel::from_channel(&verbose_feed, feed_url));
+    }
     
     let mut interval = tokio::time::interval(Duration::from_secs(cfg.check_interval_seconds));
     
     loop {
         interval.tick().await;
         
-        let verbose_feed = get_feed(&cfg.feed_url).await?;
-        let new_feed = StrippedChannel::from_channel(&verbose_feed);
-        print_check_log(&cfg.feed_url);
-        
-        if new_feed != old_feed {
-            let new_content = handle_update(&new_feed, &old_feed);
-            handle_new_content(new_content, new_feed.title.clone(), &client).await?;
-            old_feed = new_feed;
+        let mut new_feeds: Vec<StrippedChannel> = vec![];
+        for old_feed in old_feeds.iter() {
+            let verbose_feed = get_feed(&old_feed.url).await?;
+            let new_feed = StrippedChannel::from_channel(&verbose_feed, &old_feed.url);
+            print_check_log(&old_feed.url);
+            
+            handle_feeds(&new_feed, old_feed, &client).await?;
+            new_feeds.push(new_feed);
         }
+        old_feeds = new_feeds;
     }
+}
+
+async fn handle_feeds(new_feed: &StrippedChannel, old_feed: &StrippedChannel, client: &Client) -> Result<()> {
+    if new_feed != old_feed {
+        let new_content = handle_update(&new_feed, &old_feed);
+        handle_new_content(new_content, new_feed.title.clone(), &client).await?;
+    }
+    Ok(())
 }
 
 fn handle_update(new_feed: &StrippedChannel, old_feed: &StrippedChannel) -> Option<NewContent> {
