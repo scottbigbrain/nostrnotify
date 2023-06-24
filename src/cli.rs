@@ -22,6 +22,7 @@ pub enum Commands {
     SetMetadata,
     SecretKey { secret_key: String },
     AddFeed { feed_url: String },
+    RemoveFeed { feed_url: String },
     Interval { interval: u64 },
     AddRelay { relay: String },
 }

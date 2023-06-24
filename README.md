@@ -40,6 +40,11 @@ To add a feed to monitor, just run
 $ nostrnotify add-feed <feed url>
 ```
 Every feed that you add will be monitored each time that the bot runs.
+## Removing a Feed
+You can remove a feed from the monitor list with
+```
+$ nostrnotify remove-feed <feed url>
+```
 ## Setting an Interval
 `nostrnotify` will only download the feed every so often in order to balance quick updates with bandwidtch contraints. The default for this is 300 seconds (checks feed every 5 minutes). You can set a custom interval with
 ```

@@ -35,6 +35,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
             cfg.feeds.push(String::from(feed_url));
             confy::store("nostrnotify", None, cfg)?
         },
+        Commands::RemoveFeed { feed_url } => {
+            cfg.feeds.retain(|x| x != feed_url);
+            confy::store("nostrnotify", None, cfg)?
+        }
         Commands::Interval { interval } => {
             cfg.check_interval_seconds = *interval;
             confy::store("nostrnotify", None, cfg)?
